@@ -44,20 +44,25 @@ var KisBpmAssignmentPopupCtrl = [ '$scope', function($scope) {
         $scope.assignment = {};
     }
 
+    $scope.assignment.candidateUserss = [{key:'',value: ''},{key:'1',value: '一'},{key:'2',value: '二'},{key:'3',value: '三'}];
     if ($scope.assignment.candidateUsers == undefined || $scope.assignment.candidateUsers.length == 0)
     {
-    	$scope.assignment.candidateUsers = [{value: ''}];
+    	$scope.assignment.candidateUsers = [{key:'',value: ''},{key:'1',value: '一'},{key:'2',value: '二'},{key:'3',value: '三'}];
+    }
+    if ($scope.assignment.createUsers == undefined || $scope.assignment.createUsers.length == 0)
+    {
+        $scope.assignment.createUsers = [{value: ''}];
     }
     
     // Click handler for + button after enum value
     var userValueIndex = 1;
     $scope.addCandidateUserValue = function(index) {
-        $scope.assignment.candidateUsers.splice(index + 1, 0, {value: 'value ' + userValueIndex++});
+        $scope.assignment.createUsers.splice(index + 1, 0, {value: 'value ' + userValueIndex++});
     };
 
     // Click handler for - button after enum value
     $scope.removeCandidateUserValue = function(index) {
-        $scope.assignment.candidateUsers.splice(index, 1);
+        $scope.assignment.createUsers.splice(index, 1);
     };
     
     if ($scope.assignment.candidateGroups == undefined || $scope.assignment.candidateGroups.length == 0)
@@ -87,19 +92,19 @@ var KisBpmAssignmentPopupCtrl = [ '$scope', function($scope) {
 
     // Close button handler
     $scope.close = function() {
-    	handleAssignmentInput($scope);
+    	// handleAssignmentInput($scope);
     	$scope.property.mode = 'read';
     	$scope.$hide();
     };
-    
+    $scope.assignment.conf = [];
     var handleAssignmentInput = function($scope) {
-    	if ($scope.assignment.candidateUsers)
+    	if ($scope.assignment.createUsers)
     	{
 	    	var emptyUsers = true;
 	    	var toRemoveIndexes = [];
-	        for (var i = 0; i < $scope.assignment.candidateUsers.length; i++)
+	        for (var i = 0; i < $scope.assignment.createUsers.length; i++)
 	        {
-	        	if ($scope.assignment.candidateUsers[i].value != '')
+	        	if ($scope.assignment.conf[i].value != '')
 	        	{
 	        		emptyUsers = false;
 	        	}
@@ -111,13 +116,16 @@ var KisBpmAssignmentPopupCtrl = [ '$scope', function($scope) {
 	        
 	        for (var i = 0; i < toRemoveIndexes.length; i++)
 	        {
-	        	$scope.assignment.candidateUsers.splice(toRemoveIndexes[i], 1);
+	        	$scope.assignment.createUsers.splice(toRemoveIndexes[i], 1);
 	        }
 	        
 	        if (emptyUsers)
 	        {
-	        	$scope.assignment.candidateUsers = undefined;
-	        }
+	        	$scope.assignment.conf = [];
+	        }else{
+	            alert($scope.assignment.conf[0].value);
+                $scope.assignment.candidateUsers=$scope.assignment.conf;
+            }
     	}
         
     	if ($scope.assignment.candidateGroups)

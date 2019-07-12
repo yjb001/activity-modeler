@@ -17,10 +17,15 @@
                 <div class="row row-no-gutter">
                     <div class="form-group">
                     	<label for="userField">{{'PROPERTY.ASSIGNMENT.CANDIDATE_USERS' | translate}}</label>
-                        <div ng-repeat="candidateUser in assignment.candidateUsers">
-            	            <input id="userField" class="form-control" type="text" ng-model="candidateUser.value" />
+                        <!--<div ng-repeat="candidateUser in assignment.candidateUsers">-->
+            	            <!--<input id="userField" class="form-control" type="text" ng-model="candidateUser.value" />-->
+                        <div ng-repeat="createUser in assignment.createUsers">
+                            <select id="userField"  ng-init="$parent.assignment.conf[$index]=assignment.candidateUserss[0]"
+                                    class="form-control" ng-model="$parent.assignment.conf[$index]"
+                                    ng-options="candidateUser.value for candidateUser in assignment.candidateUserss">
+                            </select>
             	            <i class="glyphicon glyphicon-minus clickable-property" ng-click="removeCandidateUserValue($index)"></i>
-            	            <i ng-if="$index == (assignment.candidateUsers.length - 1)" class="glyphicon glyphicon-plus clickable-property" ng-click="addCandidateUserValue($index)"></i>
+            	            <i ng-if="$index == (assignment.createUsers.length - 1)" class="glyphicon glyphicon-plus clickable-property" ng-click="addCandidateUserValue($index)"></i>
                         </div>
                    	</div>
             
