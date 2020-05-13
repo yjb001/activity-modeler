@@ -32,7 +32,38 @@ var KisBpmAssignmentCtrl = [ '$scope', '$modal', function($scope, $modal) {
     $modal(opts);
 }];
 
-var KisBpmAssignmentPopupCtrl = [ '$scope', function($scope) {
+var KisBpmAssignmentPopupCtrl = [ '$scope', '$modal', function($scope, $modal) {
+    //Open the dialog to select users
+    $scope.choseAssignment = function(flag) {
+
+        var opts = {
+            template:  'editor-app/configuration/properties/assignment-popup-popup.html?version=' + Date.now(),
+            scope: $scope
+        };
+        $scope.choseAssignmentFlag = flag;
+        // Open the dialog
+        $modal(opts);
+    }
+
+    //Open the dialog to select candidateGroups
+    $scope.choseCandidateGroups = function(){
+        var opts = {
+            template:  'editor-app/configuration/properties/assignment-candidateGroup.html?version=' + Date.now(),
+            scope: $scope
+        };
+        // Open the dialog
+        $modal(opts);
+    }
+//因新打开的界面上选定的数据要传输到当前modal中，所以使用此方式，这是angular.js中子窗口向父窗口传输数据的方式
+    $scope.$on('choseAssigneesStr', function(event,data){
+        $scope.assignment.candidateUsers[0].value = data;
+    });
+    $scope.$on('choseAssigneeStr', function(event,data){
+        $scope.assignment.assignee = data;
+    });
+    $scope.$on('choseCandidateGroupsStr', function(event,data){
+        $scope.assignment.candidateGroups[0].value = data;
+    });
     	
     // Put json representing assignment on scope
     if ($scope.property.value !== undefined && $scope.property.value !== null
@@ -57,12 +88,12 @@ var KisBpmAssignmentPopupCtrl = [ '$scope', function($scope) {
     // Click handler for + button after enum value
     var userValueIndex = 1;
     $scope.addCandidateUserValue = function(index) {
-        $scope.assignment.createUsers.splice(index + 1, 0, {value: 'value ' + userValueIndex++});
+        $scope.assignment.candidateUsers.splice(index + 1, 0, {value: 'value ' + userValueIndex++});
     };
 
     // Click handler for - button after enum value
     $scope.removeCandidateUserValue = function(index) {
-        $scope.assignment.createUsers.splice(index, 1);
+        $scope.assignment.candidateUsers.splice(index, 1);
     };
     
     if ($scope.assignment.candidateGroups == undefined || $scope.assignment.candidateGroups.length == 0)
@@ -155,4 +186,156 @@ var KisBpmAssignmentPopupCtrl = [ '$scope', function($scope) {
 	        }
     	}
     };
+}];
+//用户选择模态框的控制器
+var KisBpmChoseAssignmentCtrl = ['$scope', '$http', function($scope, $http) {
+    //初始化左边菜单栏数据，并触发第一个菜单的点击事件
+    var roles = [];
+    var initId;
+    $scope.getAllRoles = function (successCallback) {
+        $http({
+            method: 'get',
+            headers: {'Accept': 'application/json',
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'},
+            url: '[URL]'})  //此处是获取所需角色的URL
+
+            .success(function (data, status, headers, config) {
+                //根据需要处理数据，将其封装成List<json>格式的数据，json中包含id和name（注：json中的数据可根据需要自行增删）
+                var obj = data.obj.object;
+                for (var i=0; i<obj.length; i++) {
+                    if (i==0) {
+                        initId = obj[i].id + "";
+                        $scope.getAllAccountByRole(initId);
+                    }
+                    roles.push({id:obj[i].id,name:obj[i].name});
+                }
+                //将封装好的roles数据赋值给全局变量roles
+                $scope.roles = roles;
+            })
+            .error(function (data, status, headers, config) {
+            });
+    };
+    $scope.getAllRoles(function(){});
+
+    $scope.getAllAccountByRole = function(value) {
+        $http({
+            method: 'get',
+            headers: {'Accept': 'application/json',
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'},
+            url: '[URL]'+value})   //根据roleId获取当前组的用户数据的URL,value为roleId
+
+            .success(function (data, status, headers, config) {
+                //封装数据
+                var obj = data.obj;
+                if (data != null) {
+                    var accounts = [];
+                    for (var i=0; i<obj.length; i++) {
+                        accounts.push({id:obj[i].id, code : obj[i].employeeCode, name : obj[i].userName, index:i});
+                    }
+                    $scope.accounts=accounts;
+                }
+            })
+            .error(function (data, status, headers, config) {
+            });
+    };
+
+    // Close button handler
+    $scope.close = function() {
+        $scope.$hide();
+    };
+    $scope.formData = {};
+    $scope.candidateUser={};
+
+    //Save Data
+    $scope.save = function() {
+        if ($scope.choseAssignmentFlag == "assignee") {
+            var choseAssignee = $scope.formData.assignee;
+            //子窗口向父窗口传输数据
+            $scope.$emit('choseAssigneeStr', choseAssignee);
+        } else if ($scope.choseAssignmentFlag == "assignees") {
+            var choseAssignees = $scope.accounts;
+            var choseAssigneesStr = "";
+            for (var i=0;i<choseAssignees.length; i++) {
+                if (choseAssignees[i].selected) {
+                    choseAssigneesStr += choseAssignees[i].id + ",";
+                }
+            }
+            choseAssigneesStr = choseAssigneesStr.substring(0,choseAssigneesStr.length-1);
+            //子窗口向父窗口传输数据
+            $scope.$emit('choseAssigneesStr', choseAssigneesStr);
+        }
+        $scope.close();
+    };
+    $scope.selectAll = function($event) {
+        var checkbox = $event.target;
+        var choseAssignees = $scope.accounts;
+        for (var i=0;i<choseAssignees.length; i++) {
+            if (checkbox.checked) {
+                choseAssignees[i].selected = true;
+            } else {
+                choseAssignees[i].selected = false;
+            }
+        }
+        $scope.accounts = choseAssignees;
+    }
+}];
+
+//组选择模态框的控制器
+var KisBpmChoseCandidateGroupsCtrl = ['$scope', '$http', function($scope, $http) {
+
+    var candidateGroups = [];
+    $scope.getAllRoles = function (successCallback) {
+        $http({
+            method: 'get',
+            headers: {'Accept': 'application/json',
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'},
+            url: '/role/list'})
+
+            .success(function (data, status, headers, config) {
+                var obj = data.obj.object;
+                for (var i=0; i<obj.length; i++) {
+                    candidateGroups.push({id:obj[i].id,name:obj[i].name,description:obj[i].description});
+                }
+                $scope.candidateGroups = candidateGroups;
+            })
+            .error(function (data, status, headers, config) {
+            });
+    };
+    $scope.getAllRoles(function() {
+    });
+
+    //关闭按钮的点击事件
+    // Close button handler
+    $scope.close = function() {
+        $scope.$hide();
+    };
+
+    //保存按钮的点击事件
+    $scope.save = function() {
+        var choseCandidateGroups = $scope.candidateGroups;
+        var choseCandidateGroupsStr = "";
+        for (var i=0;i<choseCandidateGroups.length; i++) {
+            if (choseCandidateGroups[i].selected) {
+                choseCandidateGroupsStr += choseCandidateGroups[i].id + ",";
+            }
+        }
+        choseCandidateGroupsStr = choseCandidateGroupsStr.substring(0,choseCandidateGroupsStr.length-1);
+        //子窗口向父窗口传输数据
+        $scope.$emit('choseCandidateGroupsStr', choseCandidateGroupsStr);
+        $scope.close();
+    }
+
+    //全选框的点击事件
+    $scope.selectAll = function($event) {
+        var checkbox = $event.target;
+        var candidateGroups = $scope.candidateGroups;
+        for (var i=0;i<candidateGroups.length; i++) {
+            if (checkbox.checked) {
+                candidateGroups[i].selected = true;
+            } else {
+                candidateGroups[i].selected = false;
+            }
+        }
+        $scope.candidateGroups = candidateGroups;
+    }
 }];
